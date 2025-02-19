@@ -1,0 +1,110 @@
+services:
+  # reverse-proxy
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: always
+    ports:
+      - "443:443"    # HTTPS
+      - "8080:8080"  # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./certs:/etc/certs  # Mount SSL certificates
+    networks:
+      web:
+        aliases:
+          - api-gateway.kinodev.localhost
+          - domain-service.kinodev.localhost
+          - ui.kinodev.localhost
+  # db
+  db:
+    image: mysql:8.0
+    container_name: db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - ./db-init-and-seed:/docker-entrypoint-initdb.d
+    ports:
+        - "3306:3306"
+    networks:
+      - web  
+
+    # api-gateway
+  api-gateway:
+    image: api-gateway
+    container_name: api-gateway
+    build:
+      context: "E:/Education/KinoDev/KinoDev.ApiGateway"
+      dockerfile: "E:/Education/KinoDev/KinoDev.ApiGateway/Dockerfile"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
+      - USE_SWAGGER=${UseSwagger}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=Host(`api-gateway.kinodev.localhost`)"      
+      - "traefik.http.routers.api-gateway.entrypoints=websecure"
+      - "traefik.http.routers.api-gateway.tls=true"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web
+  
+  domain-service:
+    image: domain-service
+    container_name: domain-service
+    build:
+      context: "E:/Education/KinoDev/KinoDev.DomainService"
+      dockerfile: "E:/Education/KinoDev/KinoDev.DomainService/Dockerfile"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
+      - USE_SWAGGER=${UseSwagger}
+      - ConnectionStrings__LocalDB=${ConnectionStrings__LocalDB}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.domain-service.rule=Host(`domain-service.kinodev.localhost`)"      
+      - "traefik.http.routers.domain-service.entrypoints=websecure"
+      - "traefik.http.routers.domain-service.tls=true"
+      - "traefik.http.services.domain-service.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web
+
+    # my-ui
+  ui:
+    image: ui
+    container_name: ui
+    build:
+      context: "E:/Education/KinoDev/KinoDev.UI"
+      dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
+      - "traefik.http.routers.ui.entrypoints=websecure"
+      - "traefik.http.routers.ui.tls=true"
+      # - "traefik.http.routers.ui.tls.domains[0].main=ui.kinodev.localhost"
+      - "traefik.http.services.ui.loadbalancer.server.port=80"
+    restart: always
+    networks:
+      - web    
+
+networks:
+  web:
+    driver: bridge
