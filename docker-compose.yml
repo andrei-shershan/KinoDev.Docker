@@ -5,6 +5,7 @@ services:
     container_name: traefik
     restart: always
     ports:
+      - "80:80"      # HTTP
       - "443:443"    # HTTPS
       - "8080:8080"  # Traefik Dashboard
     volumes:
@@ -20,7 +21,7 @@ services:
   # db
   db:
     image: mysql:8.0
-    container_name: db
+    container_name: kinodev-db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -29,7 +30,7 @@ services:
     volumes:
       - ./db-init-and-seed:/docker-entrypoint-initdb.d
     ports:
-        - "3306:3306"
+      - "3306:3306"
     networks:
       - web  
 
