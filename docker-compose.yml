@@ -66,6 +66,9 @@ services:
     build:
       context: "E:/Education/KinoDev/KinoDev.DomainService"
       dockerfile: "E:/Education/KinoDev/KinoDev.DomainService/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_RUNNING_IN_CONTAINER=true
