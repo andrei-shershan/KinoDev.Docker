@@ -17,6 +17,7 @@ services:
         aliases:
           - api-gateway.kinodev.localhost
           - domain-service.kinodev.localhost
+          - identity.kinodev.localhost
           - ui.kinodev.localhost
   # db
   db:
@@ -34,6 +35,22 @@ services:
     networks:
       - web  
 
+  # identity-db
+  identity-db:
+    image: mysql:8.0
+    container_name: kinodev-identity-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword
+    volumes:
+      - ./sql-init-scripts/identity-db:/docker-entrypoint-initdb.d
+    ports:
+      - "3307:3306"
+    networks:
+      - web      
+
     # api-gateway
   api-gateway:
     image: api-gateway
@@ -48,6 +65,10 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
       - USE_SWAGGER=${UseSwagger}
+      - JWT__Authority=${JWT__Authority}
+      - JWT__Secret=${JWT__Secret}
+      - JWT__Issuer=${JWT__Issuer}
+      - JWT__Audience=${JWT__Audience}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=Host(`api-gateway.kinodev.localhost`)"      
@@ -70,19 +91,55 @@ services:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
     environment:
+    # TODO: Move to .env files
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ASPNETCORE_URLS=http://*:80;https://*:443
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
       - USE_SWAGGER=${UseSwagger}
-      - ConnectionStrings__LocalDB=${ConnectionStrings__LocalDB}
+      - ConnectionStrings__Kinodev=${ConnectionStrings__Kinodev}
+      - JWT__Authority=${JWT__Authority}
+      - JWT__Secret=${JWT__Secret}
+      - JWT__Issuer=${JWT__Issuer}
+      - JWT__Audience=${JWT__Audience}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.domain-service.rule=Host(`domain-service.kinodev.localhost`)"      
       - "traefik.http.routers.domain-service.entrypoints=websecure"
       - "traefik.http.routers.domain-service.tls=true"
       - "traefik.http.services.domain-service.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web
+
+  identity:
+    image: identity-service
+    container_name: identity-service
+    build:
+      context: "E:/Education/KinoDev/KinoDev.identity"
+      dockerfile: "E:/Education/KinoDev/KinoDev.identity/Dockerfile"
+    env_file:
+      - .env  
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
+      - USE_SWAGGER=${UseSwagger}
+      - ConnectionStrings__Identity=${ConnectionStrings__Identity}
+      - JWT__Secret=${JWT__Secret}
+      - JWT__Issuer=${JWT__Issuer}
+      - JWT__Audience=${JWT__Audience}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.identity.rule=Host(`identity.kinodev.localhost`)"      
+      - "traefik.http.routers.identity.entrypoints=websecure"
+      - "traefik.http.routers.identity.tls=true"
+      - "traefik.http.services.identity.loadbalancer.server.port=80"
     volumes:
       - ./certs:/certs:ro # Mount certs folder as read-only
     restart: always
