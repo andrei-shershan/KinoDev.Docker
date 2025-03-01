@@ -10,13 +10,19 @@ entryPoints:
     address: ":80"
   websecure:
     address: ":443"
+
+tls:
+  certificates:
+    - certFile: "etc/certs/kinodev.crt"
+      keyFile: "etc/certs/kinodev.key"
+
 providers:
   docker:
     exposedByDefault: false
+  file:
+    directory: "/etc/traefik"
+    watch: true  
 
 
-# tls:
-#   certificates:
-#     - certFile: "/certs/cert.crt"
-#       keyFile: "/certs/cert.key"
+
 
