@@ -64,8 +64,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ASPNETCORE_URLS=http://*:80;https://*:443
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
-      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
       - USE_SWAGGER=${UseSwagger}
     labels:
       - "traefik.enable=true"
@@ -95,8 +95,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ASPNETCORE_URLS=http://*:80;https://*:443
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
-      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
       - USE_SWAGGER=${UseSwagger}
       - ConnectionStrings__Kinodev=${ConnectionStrings__Kinodev}
     labels:
@@ -126,8 +126,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_RUNNING_IN_CONTAINER=true
       - ASPNETCORE_URLS=http://*:80;https://*:443
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
-      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
       - USE_SWAGGER=${UseSwagger}
       - ConnectionStrings__Identity=${ConnectionStrings__Identity}
     labels:
@@ -156,11 +156,12 @@ services:
       - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
       - "traefik.http.routers.ui.entrypoints=websecure"
       - "traefik.http.routers.ui.tls=true"
-      # - "traefik.http.routers.ui.tls.domains[0].main=ui.kinodev.localhost"
       - "traefik.http.services.ui.loadbalancer.server.port=80"
     restart: always
     networks:
-      - web    
+      - web
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only    
 
 networks:
   web:
