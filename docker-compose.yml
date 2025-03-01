@@ -58,6 +58,8 @@ services:
     build:
       context: "E:/Education/KinoDev/KinoDev.ApiGateway"
       dockerfile: "E:/Education/KinoDev/KinoDev.ApiGateway/Dockerfile"
+    env_file:
+      - .env       
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_RUNNING_IN_CONTAINER=true
@@ -65,10 +67,6 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/cert.crt
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
       - USE_SWAGGER=${UseSwagger}
-      - JWT__Authority=${JWT__Authority}
-      - JWT__Secret=${JWT__Secret}
-      - JWT__Issuer=${JWT__Issuer}
-      - JWT__Audience=${JWT__Audience}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=Host(`api-gateway.kinodev.localhost`)"      
@@ -90,6 +88,8 @@ services:
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
+    env_file:
+      - .env        
     environment:
     # TODO: Move to .env files
       - ASPNETCORE_ENVIRONMENT=Production
@@ -99,10 +99,6 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
       - USE_SWAGGER=${UseSwagger}
       - ConnectionStrings__Kinodev=${ConnectionStrings__Kinodev}
-      - JWT__Authority=${JWT__Authority}
-      - JWT__Secret=${JWT__Secret}
-      - JWT__Issuer=${JWT__Issuer}
-      - JWT__Audience=${JWT__Audience}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.domain-service.rule=Host(`domain-service.kinodev.localhost`)"      
@@ -121,6 +117,9 @@ services:
     build:
       context: "E:/Education/KinoDev/KinoDev.identity"
       dockerfile: "E:/Education/KinoDev/KinoDev.identity/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
     env_file:
       - .env  
     environment:
@@ -131,9 +130,6 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/cert.key
       - USE_SWAGGER=${UseSwagger}
       - ConnectionStrings__Identity=${ConnectionStrings__Identity}
-      - JWT__Secret=${JWT__Secret}
-      - JWT__Issuer=${JWT__Issuer}
-      - JWT__Audience=${JWT__Audience}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.identity.rule=Host(`identity.kinodev.localhost`)"      
