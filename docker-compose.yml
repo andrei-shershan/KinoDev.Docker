@@ -19,6 +19,7 @@ services:
           - domain-service.kinodev.localhost
           - identity.kinodev.localhost
           - ui.kinodev.localhost
+          - admin-portal.kinodev.localhost
   # db
   db:
     image: mysql:8.0
@@ -149,6 +150,11 @@ services:
     build:
       context: "E:/Education/KinoDev/KinoDev.UI"
       dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
+      args:
+        - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
+        - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
+        - Portals_Main=${Portals__Main}
+        - Portals_Admin=${Portals__Admin}  
     environment:
       - NODE_ENV=production
     labels:
@@ -157,11 +163,46 @@ services:
       - "traefik.http.routers.ui.entrypoints=websecure"
       - "traefik.http.routers.ui.tls=true"
       - "traefik.http.services.ui.loadbalancer.server.port=80"
+      # Define the SPA middleware with a clear name
+      - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
+      - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
+      # Apply the middleware to the router (note the middleware name matches)
+      - "traefik.http.routers.ui.middlewares=ui-spa@docker"  
     restart: always
     networks:
       - web
     volumes:
       - ./certs:/certs:ro # Mount certs folder as read-only    
+
+  admin-portal:
+    image: ui
+    container_name: admin-portal
+    build:
+      context: "E:/Education/KinoDev/KinoDev.UI"
+      dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
+      args:
+        - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
+        - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
+        - Portals_Main=${Portals__Main}
+        - Portals_Admin=${Portals__Admin}  
+    environment:
+      - NODE_ENV=production
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.admin-portal.rule=Host(`admin-portal.kinodev.localhost`)"
+      - "traefik.http.routers.admin-portal.entrypoints=websecure"
+      - "traefik.http.routers.admin-portal.tls=true"
+      - "traefik.http.services.admin-portal.loadbalancer.server.port=80"
+      # Define the SPA middleware with a clear name
+      - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
+      - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
+      # Apply the middleware to the router (note the middleware name matches)
+      - "traefik.http.routers.admin-portal.middlewares=ui-spa@docker"  
+    restart: always
+    networks:
+      - web
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only      
 
 networks:
   web:

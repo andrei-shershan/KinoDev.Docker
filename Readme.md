@@ -56,3 +56,7 @@ entryPoints:
 
 
 openssl.exe req -x509 -nodes -days 365 -newkey rsa:2048 -keyout kinodev.key -out kinodev.crt -config kinodev.cnf -extensions req_ext          
+
+
+
+127.0.0.1 admin-portal.kinodev.localhost
