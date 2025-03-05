@@ -154,9 +154,8 @@ services:
         - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
         - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
         - Portals_Main=${Portals__Main}
-        - Portals_Admin=${Portals__Admin}  
-    environment:
-      - NODE_ENV=production
+        - Portals_Admin=${Portals__Admin}
+        - NODE_ENV=development   
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
@@ -184,9 +183,8 @@ services:
         - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
         - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
         - Portals_Main=${Portals__Main}
-        - Portals_Admin=${Portals__Admin}  
-    environment:
-      - NODE_ENV=production
+        - Portals_Admin=${Portals__Admin}
+        - NODE_ENV=development  
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.admin-portal.rule=Host(`admin-portal.kinodev.localhost`)"
