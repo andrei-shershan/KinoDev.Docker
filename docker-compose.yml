@@ -20,6 +20,18 @@ services:
           - identity.kinodev.localhost
           - ui.kinodev.localhost
           - admin-portal.kinodev.localhost
+
+  imageserver:
+    image: nginx:alpine
+    volumes:
+      - E:/EDUCATION/KinoDev/KinoDev.Docker/data/movies/images:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.images.rule=Host(`images.kinodev.localhost`)"
+      - "traefik.http.routers.images.entrypoints=web"
+    networks:
+      - web
+                
   # db
   db:
     image: mysql:8.0
@@ -59,6 +71,9 @@ services:
     build:
       context: "E:/Education/KinoDev/KinoDev.ApiGateway"
       dockerfile: "E:/Education/KinoDev/KinoDev.ApiGateway/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
     env_file:
       - .env       
     environment:
