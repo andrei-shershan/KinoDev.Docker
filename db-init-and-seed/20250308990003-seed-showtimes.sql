@@ -9,65 +9,63 @@ BEGIN
 	set @counter = 1;
     set @yesterday_date = DATE(DATE_SUB(NOW(), INTERVAL 1 DAY));
 
-    set @movieA = 1001;
-    set @movieB = 1002;
-    set @movieC = 1003;
-    set @movieD = 1004;    
-    set @movieE = 1005;
 
-    set @weekAdjustment = 5;
-    set @endOfWeekCounter = 1;
-    
-    my_loop: WHILE @counter < 28 DO
+
+    my_loop: WHILE @counter < 20 DO
 		set @dayToSet = DATE(DATE_ADD(@yesterday_date, INTERVAL 1 DAY));
 
         set @time1200 = CONCAT(date_format(@dayToSet, '%Y-%m-%d'), ' 12:00:00');
-        set @time1700 = CONCAT(date_format(@dayToSet, '%Y-%m-%d'), ' 17:00:00');
-        set @time2000 = CONCAT(date_format(@dayToSet, '%Y-%m-%d'), ' 20:00:00');
+        set @time1500 = CONCAT(date_format(@dayToSet, '%Y-%m-%d'), ' 15:00:00');
+        set @time1800 = CONCAT(date_format(@dayToSet, '%Y-%m-%d'), ' 18:00:00');
+        set @time2100 = CONCAT(date_format(@dayToSet, '%Y-%m-%d'), ' 21:00:00');
 
-        if @counter > 1 AND @counter % 7 = 0 THEN
-            set @movieA = @movieA + @weekAdjustment;
-            set @movieB = @movieB + @weekAdjustment;    
-            set @movieC = @movieC + @weekAdjustment;
-            set @movieD = @movieD + @weekAdjustment;
-            set @movieE = @movieE + @weekAdjustment;
-            
-            set @endOfWeekCounter = 1;
-        END IF;  
-
-        SELECT @counter, @dayToSet, @time1200, @time1700, @time2000, @endOfWeekCounter;
-
-        if @endOfWeekCounter < 5 THEN
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieA, '1', @time1200, '15');  
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieA, '1', @time1700, '20');
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieA, '1', @time2000, '20');  
-
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieB, '2', @time1200, '15');  
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieB, '2', @time1700, '20');
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieB, '2', @time2000, '20'); 
+        if(@counter % 2 = 0) THEN
+            set @movie_01 = 1001;
+            set @movie_02 = 1003;
+            set @movie_03 = 1005;
+            set @movie_04 = 1007;
+            set @movie_05 = 1009;
+            set @movie_06 = 1011;    
+            set @movie_07 = 1013;
+            set @movie_08 = 1015; 
+            set @movie_09 = 1017; 
+            set @movie_10 = 1019;  
         ELSE
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieA, '1', @time1200, '15');  
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieA, '1', @time1700, '20');
-
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieC, '1', @time2000, '20'); 
-
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieB, '2', @time1200, '15');  
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieB, '2', @time1700, '20');
-
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieD, '2', @time2000, '20');  
+            set @movie_01 = 1002;
+            set @movie_02 = 1004;
+            set @movie_03 = 1006;
+            set @movie_04 = 1008;
+            set @movie_05 = 1010;
+            set @movie_06 = 1012;    
+            set @movie_07 = 1014;
+            set @movie_08 = 1016; 
+            set @movie_09 = 1018; 
+            set @movie_10 = 1020;  
         END IF;
 
-        if @counter % 2 = 0 THEN
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieA, '4', @time1700, '20');  
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieB, '4', @time2000, '20'); 
-        ELSE
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieC, '4', @time1700, '20');  
-            INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieD, '4', @time2000, '20'); 
-        END IF;
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_01, '1', @time1200, '15');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_02, '2', @time1200, '15');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_03, '3', @time1200, '15');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_04, '4', @time1200, '15');
 
-        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movieE, '3', @time2000, '25'); 
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_05, '1', @time1500, '15');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_06, '2', @time1500, '15');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_07, '3', @time1500, '15');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_08, '4', @time1500, '15');
 
-       set @endOfWeekCounter = @endOfWeekCounter + 1;
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_01, '1', @time1800, '20');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_02, '2', @time1800, '20');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_03, '3', @time1800, '20');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_04, '4', @time1800, '20');
+
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_05, '1', @time2100, '20');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_06, '2', @time2100, '20');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_07, '3', @time2100, '20');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_01, '4', @time2100, '20'); 
+
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_09, '5', @time1800, '25');
+        INSERT INTO `kinodev_local`.`ShowTimes` (`MovieId`, `HallId`, `Time`, `Price`) VALUES (@movie_10, '5', @time2100, '25');        
+
        set @counter = @counter + 1;
        set @yesterday_date = @dayToSet;
     END WHILE my_loop;
