@@ -20,6 +20,9 @@ services:
           - identity.kinodev.localhost
           - ui.kinodev.localhost
           - admin-portal.kinodev.localhost
+          - payment-service.kinodev.localhost
+          # - mongodb.kinodev.localhost
+          - mongo-express.kinodev.localhost
 
   imageserver:
     image: nginx:alpine
@@ -62,9 +65,48 @@ services:
     ports:
       - "3307:3306"
     networks:
-      - web      
+      - web
 
-    # api-gateway
+  # MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongouser
+      MONGO_INITDB_ROOT_PASSWORD: mongopassword
+      MONGO_INITDB_DATABASE: kinodev_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo-data:/data/db
+    networks:
+      - web
+
+  # MongoDB Express - Web-based MongoDB admin interface
+  mongo-express:
+    image: mongo-express:latest
+    container_name: kinodev-mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: mongouser
+      ME_CONFIG_MONGODB_ADMINPASSWORD: mongopassword
+      ME_CONFIG_MONGODB_URL: mongodb://mongouser:mongopassword@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: pass
+    depends_on:
+      - mongodb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mongo-express.rule=Host(`mongo-express.kinodev.localhost`)"
+      - "traefik.http.routers.mongo-express.entrypoints=web"
+      - "traefik.http.services.mongo-express.loadbalancer.server.port=8081"
+    networks:
+      - web
+
+  # api-gateway
   api-gateway:
     image: api-gateway
     container_name: api-gateway
@@ -83,6 +125,7 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
       - USE_SWAGGER=${UseSwagger}
+      - CookieResponse__Domain="api-gateway.kinodev.localhost"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=Host(`api-gateway.kinodev.localhost`)"      
@@ -121,6 +164,41 @@ services:
       - "traefik.http.routers.domain-service.entrypoints=websecure"
       - "traefik.http.routers.domain-service.tls=true"
       - "traefik.http.services.domain-service.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web
+
+  payment-service:
+    image: payment-service
+    container_name: payment-service
+    build:
+      context: "E:/Education/KinoDev/KinoDev.Payment"
+      dockerfile: "E:/Education/KinoDev/KinoDev.Payment/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
+    env_file:
+      - .env        
+    environment:
+    # TODO: Move to .env files
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
+      - USE_SWAGGER=${UseSwagger}
+      - Stripe__SecretKey=${Stripe__SecretKey}
+      - Stripe__PublicKey=${Stripe__PublicKey}
+      - MongoDB__ConnectionString=${MongoDB__ConnectionString}
+      - MongoDB__DatabaseName=${MongoDB__DatabaseName}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payment-service.rule=Host(`payment-service.kinodev.localhost`)"      
+      - "traefik.http.routers.payment-service.entrypoints=websecure"
+      - "traefik.http.routers.payment-service.tls=true"
+      - "traefik.http.services.payment-service.loadbalancer.server.port=80"
     volumes:
       - ./certs:/certs:ro # Mount certs folder as read-only
     restart: always
@@ -188,34 +266,34 @@ services:
     volumes:
       - ./certs:/certs:ro # Mount certs folder as read-only    
 
-  admin-portal:
-    image: ui
-    container_name: admin-portal
-    build:
-      context: "E:/Education/KinoDev/KinoDev.UI"
-      dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
-      args:
-        - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
-        - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
-        - Portals_Main=${Portals__Main}
-        - Portals_Admin=${Portals__Admin}
-        - NODE_ENV=development  
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.admin-portal.rule=Host(`admin-portal.kinodev.localhost`)"
-      - "traefik.http.routers.admin-portal.entrypoints=websecure"
-      - "traefik.http.routers.admin-portal.tls=true"
-      - "traefik.http.services.admin-portal.loadbalancer.server.port=80"
-      # Define the SPA middleware with a clear name
-      - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
-      - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
-      # Apply the middleware to the router (note the middleware name matches)
-      - "traefik.http.routers.admin-portal.middlewares=ui-spa@docker"  
-    restart: always
-    networks:
-      - web
-    volumes:
-      - ./certs:/certs:ro # Mount certs folder as read-only      
+  # admin-portal:
+  #   image: ui
+  #   container_name: admin-portal
+  #   build:
+  #     context: "E:/Education/KinoDev/KinoDev.UI"
+  #     dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
+  #     args:
+  #       - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
+  #       - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
+  #       - Portals_Main=${Portals__Main}
+  #       - Portals_Admin=${Portals__Admin}
+  #       - NODE_ENV=development  
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.admin-portal.rule=Host(`admin-portal.kinodev.localhost`)"
+  #     - "traefik.http.routers.admin-portal.entrypoints=websecure"
+  #     - "traefik.http.routers.admin-portal.tls=true"
+  #     - "traefik.http.services.admin-portal.loadbalancer.server.port=80"
+  #     # Define the SPA middleware with a clear name
+  #     - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
+  #     - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
+  #     # Apply the middleware to the router (note the middleware name matches)
+  #     - "traefik.http.routers.admin-portal.middlewares=ui-spa@docker"  
+  #   restart: always
+  #   networks:
+  #     - web
+  #   volumes:
+  #     - ./certs:/certs:ro # Mount certs folder as read-only      
 
 networks:
   web:
