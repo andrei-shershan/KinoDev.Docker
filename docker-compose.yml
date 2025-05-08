@@ -23,6 +23,7 @@ services:
           - payment-service.kinodev.localhost
           # - mongodb.kinodev.localhost
           - mongo-express.kinodev.localhost
+          - rabbitmq.kinodev.localhost
 
   imageserver:
     image: nginx:alpine
@@ -106,6 +107,27 @@ services:
     networks:
       - web
 
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: kinodev-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"    # AMQP protocol port
+      - "15672:15672"  # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.kinodev.localhost`)"
+      - "traefik.http.routers.rabbitmq.entrypoints=web"
+      - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
+    networks:
+      - web
+
   # api-gateway
   api-gateway:
     image: api-gateway
@@ -125,7 +147,7 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
       - USE_SWAGGER=${UseSwagger}
-      - CookieResponse__Domain="api-gateway.kinodev.localhost"
+      - CookieResponse__Domain=.kinodev.localhost
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=Host(`api-gateway.kinodev.localhost`)"      
@@ -298,3 +320,6 @@ services:
 networks:
   web:
     driver: bridge
+
+volumes:
+  rabbitmq-data:
