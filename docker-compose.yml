@@ -24,6 +24,7 @@ services:
           # - mongodb.kinodev.localhost
           - mongo-express.kinodev.localhost
           - rabbitmq.kinodev.localhost
+          - email-service.kinodev.localhost
 
   imageserver:
     image: nginx:alpine
@@ -221,6 +222,40 @@ services:
       - "traefik.http.routers.payment-service.entrypoints=websecure"
       - "traefik.http.routers.payment-service.tls=true"
       - "traefik.http.services.payment-service.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web
+  email-service:
+    image: email-service
+    container_name: email-service
+    build:
+      context: "E:/Education/KinoDev/KinoDev.EmailService"
+      dockerfile: "E:/Education/KinoDev/KinoDev.EmailService/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
+    env_file:
+      - .env        
+    environment:
+    # TODO: Move to .env files
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
+      - USE_SWAGGER=${UseSwagger}
+      # - Stripe__SecretKey=${Stripe__SecretKey}
+      # - Stripe__PublicKey=${Stripe__PublicKey}
+      # - MongoDB__ConnectionString=${MongoDB__ConnectionString}
+      # - MongoDB__DatabaseName=${MongoDB__DatabaseName}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.email-service.rule=Host(`email-service.kinodev.localhost`)"      
+      - "traefik.http.routers.email-service.entrypoints=websecure"
+      - "traefik.http.routers.email-service.tls=true"
+      - "traefik.http.services.email-service.loadbalancer.server.port=80"
     volumes:
       - ./certs:/certs:ro # Mount certs folder as read-only
     restart: always
