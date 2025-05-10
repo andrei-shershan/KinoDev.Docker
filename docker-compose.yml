@@ -23,6 +23,8 @@ services:
           - payment-service.kinodev.localhost
           # - mongodb.kinodev.localhost
           - mongo-express.kinodev.localhost
+          - rabbitmq.kinodev.localhost
+          - email-service.kinodev.localhost
 
   imageserver:
     image: nginx:alpine
@@ -106,6 +108,27 @@ services:
     networks:
       - web
 
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: kinodev-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"    # AMQP protocol port
+      - "15672:15672"  # Management UI port
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbitmq
+      RABBITMQ_DEFAULT_PASS: rabbitmq
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.kinodev.localhost`)"
+      - "traefik.http.routers.rabbitmq.entrypoints=web"
+      - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
+    networks:
+      - web
+
   # api-gateway
   api-gateway:
     image: api-gateway
@@ -125,7 +148,7 @@ services:
       - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
       - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
       - USE_SWAGGER=${UseSwagger}
-      - CookieResponse__Domain="api-gateway.kinodev.localhost"
+      - CookieResponse__Domain=.kinodev.localhost
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api-gateway.rule=Host(`api-gateway.kinodev.localhost`)"      
@@ -199,6 +222,36 @@ services:
       - "traefik.http.routers.payment-service.entrypoints=websecure"
       - "traefik.http.routers.payment-service.tls=true"
       - "traefik.http.services.payment-service.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web
+  email-service:
+    image: email-service
+    container_name: email-service
+    build:
+      context: "E:/Education/KinoDev/KinoDev.EmailService"
+      dockerfile: "E:/Education/KinoDev/KinoDev.EmailService/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
+    env_file:
+      - .env        
+    environment:
+    # TODO: Move to .env files
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
+      - USE_SWAGGER=${UseSwagger}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.email-service.rule=Host(`email-service.kinodev.localhost`)"      
+      - "traefik.http.routers.email-service.entrypoints=websecure"
+      - "traefik.http.routers.email-service.tls=true"
+      - "traefik.http.services.email-service.loadbalancer.server.port=80"
     volumes:
       - ./certs:/certs:ro # Mount certs folder as read-only
     restart: always
@@ -298,3 +351,6 @@ services:
 networks:
   web:
     driver: bridge
+
+volumes:
+  rabbitmq-data:
