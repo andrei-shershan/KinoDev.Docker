@@ -25,6 +25,9 @@ services:
           - mongo-express.kinodev.localhost
           - rabbitmq.kinodev.localhost
           - email-service.kinodev.localhost
+          - gotenberg.kinodev.localhost
+          - azurite-blob.kinodev.localhost
+          - storage-service.kinodev.localhost
 
   imageserver:
     image: nginx:alpine
@@ -258,6 +261,38 @@ services:
     networks:
       - web
 
+
+  storage-service:
+    image: storage-service
+    container_name: storage-service
+    build:
+      context: "E:/Education/KinoDev/KinoDev.StorageService"
+      dockerfile: "E:/Education/KinoDev/KinoDev.StorageService/Dockerfile"
+      args:
+        - GITHUB_USER_NAME=${GITHUB_USER_NAME}
+        - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
+    env_file:
+      - .env        
+    environment:
+    # TODO: Move to .env files
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_RUNNING_IN_CONTAINER=true
+      - ASPNETCORE_URLS=http://*:80;https://*:443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/certs/kinodev.crt
+      - ASPNETCORE_Kestrel__Certificates__Default__KeyPath=/certs/kinodev.key
+      - USE_SWAGGER=${UseSwagger}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.storage-service.rule=Host(`storage-service.kinodev.localhost`)"      
+      - "traefik.http.routers.storage-service.entrypoints=websecure"
+      - "traefik.http.routers.storage-service.tls=true"
+      - "traefik.http.services.storage-service.loadbalancer.server.port=80"
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only
+    restart: always
+    networks:
+      - web      
+
   identity:
     image: identity-service
     container_name: identity-service
@@ -290,34 +325,34 @@ services:
       - web
 
     # my-ui
-  ui:
-    image: ui
-    container_name: ui
-    build:
-      context: "E:/Education/KinoDev/KinoDev.UI"
-      dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
-      args:
-        - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
-        - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
-        - Portals_Main=${Portals__Main}
-        - Portals_Admin=${Portals__Admin}
-        - NODE_ENV=development   
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
-      - "traefik.http.routers.ui.entrypoints=websecure"
-      - "traefik.http.routers.ui.tls=true"
-      - "traefik.http.services.ui.loadbalancer.server.port=80"
-      # Define the SPA middleware with a clear name
-      - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
-      - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
-      # Apply the middleware to the router (note the middleware name matches)
-      - "traefik.http.routers.ui.middlewares=ui-spa@docker"  
-    restart: always
-    networks:
-      - web
-    volumes:
-      - ./certs:/certs:ro # Mount certs folder as read-only    
+  # ui:
+  #   image: ui
+  #   container_name: ui
+  #   build:
+  #     context: "E:/Education/KinoDev/KinoDev.UI"
+  #     dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
+  #     args:
+  #       - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
+  #       - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
+  #       - Portals_Main=${Portals__Main}
+  #       - Portals_Admin=${Portals__Admin}
+  #       - NODE_ENV=development   
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
+  #     - "traefik.http.routers.ui.entrypoints=websecure"
+  #     - "traefik.http.routers.ui.tls=true"
+  #     - "traefik.http.services.ui.loadbalancer.server.port=80"
+  #     # Define the SPA middleware with a clear name
+  #     - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
+  #     - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
+  #     # Apply the middleware to the router (note the middleware name matches)
+  #     - "traefik.http.routers.ui.middlewares=ui-spa@docker"  
+  #   restart: always
+  #   networks:
+  #     - web
+  #   volumes:
+  #     - ./certs:/certs:ro # Mount certs folder as read-only    
 
   # admin-portal:
   #   image: ui
@@ -347,6 +382,52 @@ services:
   #     - web
   #   volumes:
   #     - ./certs:/certs:ro # Mount certs folder as read-only      
+
+  # Gotenberg - HTML to PDF conversion service
+  gotenberg:
+    image: gotenberg/gotenberg:8.0.3
+    container_name: kinodev-gotenberg
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - CHROMIUM_DISABLE_ROUTES=false
+      - CHROMIUM_IGNORE_CERTIFICATE_ERRORS=true
+      - CHROMIUM_ALLOW_LIST=.kinodev.localhost
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gotenberg.rule=Host(`gotenberg.kinodev.localhost`)"
+      - "traefik.http.routers.gotenberg.entrypoints=web"
+      - "traefik.http.services.gotenberg.loadbalancer.server.port=3000"
+    networks:
+      - web
+      
+  # Azure Blob Storage Emulator (Azurite)
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: kinodev-azurite
+    restart: always
+    # tell Azurite about your custom account name+key
+    environment:
+      # Use the exact var name AZURITE_ACCOUNTS (plural!)
+      # Format is account1:key1[:key2];account2:key1[:key2];...
+      AZURITE_ACCOUNTS: "devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
+
+    ports:
+      - "10000:10000"  # Blob service
+      - "10001:10001"  # Queue service
+      - "10002:10002"  # Table service
+    volumes:
+      - ./azure-storage-data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.azurite-blob.rule=Host(`azurite-blob.kinodev.localhost`)"
+      - "traefik.http.routers.azurite-blob.entrypoints=web"
+      - "traefik.http.services.azurite-blob.loadbalancer.server.port=10000"
+    networks:
+      - web
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+
 
 networks:
   web:
