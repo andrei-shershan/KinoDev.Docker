@@ -230,6 +230,7 @@ services:
     restart: always
     networks:
       - web
+  
   email-service:
     image: email-service
     container_name: email-service
@@ -260,7 +261,6 @@ services:
     restart: always
     networks:
       - web
-
 
   storage-service:
     image: storage-service
@@ -336,6 +336,8 @@ services:
   #       - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
   #       - Portals_Main=${Portals__Main}
   #       - Portals_Admin=${Portals__Admin}
+  #       - Public_Images_Host=${Public_Images_Host}
+  #       - Public_Images_Store_Account=${Public_Images_Store_Account}
   #       - NODE_ENV=development   
   #   labels:
   #     - "traefik.enable=true"
@@ -426,8 +428,12 @@ services:
       - "traefik.http.services.azurite-blob.loadbalancer.server.port=10000"
     networks:
       - web
-    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
-
+    command:
+      azurite
+        --location /data
+        --blobHost 0.0.0.0 
+        --queueHost 0.0.0.0 
+        --tableHost 0.0.0.0
 
 networks:
   web:
