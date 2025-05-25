@@ -365,6 +365,9 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
+# Azure Storage data
+/azure-storage-data/
+azure-storage-data/
 /certs/*
 
 .env
