@@ -21,18 +21,18 @@ services:
           - ui.kinodev.localhost
           - admin-portal.kinodev.localhost
           - payment-service.kinodev.localhost
-          # - mongodb.kinodev.localhost
           - mongo-express.kinodev.localhost
           - rabbitmq.kinodev.localhost
           - email-service.kinodev.localhost
           - gotenberg.kinodev.localhost
           - azurite-blob.kinodev.localhost
           - storage-service.kinodev.localhost
+          - functions.kinodev.localhost
 
   imageserver:
     image: nginx:alpine
     volumes:
-      - E:/EDUCATION/KinoDev/KinoDev.Docker/data/movies/images:/usr/share/nginx/html:ro
+      - ./data/movies/images:/usr/share/nginx/html:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.images.rule=Host(`images.kinodev.localhost`)"
@@ -55,22 +55,6 @@ services:
       - "3306:3306"
     networks:
       - web  
-
-  # identity-db
-  identity-db:
-    image: mysql:8.0
-    container_name: kinodev-identity-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_USER: myuser
-      MYSQL_PASSWORD: mypassword
-    volumes:
-      - ./sql-init-scripts/identity-db:/docker-entrypoint-initdb.d
-    ports:
-      - "3307:3306"
-    networks:
-      - web
 
   # MongoDB
   mongodb:
@@ -137,8 +121,8 @@ services:
     image: api-gateway
     container_name: api-gateway
     build:
-      context: "E:/Education/KinoDev/KinoDev.ApiGateway"
-      dockerfile: "E:/Education/KinoDev/KinoDev.ApiGateway/Dockerfile"
+      context: "../KinoDev.ApiGateway"
+      dockerfile: "../KinoDev.ApiGateway/Dockerfile"
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
@@ -168,8 +152,8 @@ services:
     image: domain-service
     container_name: domain-service
     build:
-      context: "E:/Education/KinoDev/KinoDev.DomainService"
-      dockerfile: "E:/Education/KinoDev/KinoDev.DomainService/Dockerfile"
+      context: "../KinoDev.DomainService"
+      dockerfile: "../KinoDev.DomainService/Dockerfile"
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
@@ -200,8 +184,8 @@ services:
     image: payment-service
     container_name: payment-service
     build:
-      context: "E:/Education/KinoDev/KinoDev.Payment"
-      dockerfile: "E:/Education/KinoDev/KinoDev.Payment/Dockerfile"
+      context: "../KinoDev.Payment"
+      dockerfile: "../KinoDev.Payment/Dockerfile"
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
@@ -235,8 +219,8 @@ services:
     image: email-service
     container_name: email-service
     build:
-      context: "E:/Education/KinoDev/KinoDev.EmailService"
-      dockerfile: "E:/Education/KinoDev/KinoDev.EmailService/Dockerfile"
+      context: "../KinoDev.EmailService"
+      dockerfile: "../KinoDev.EmailService/Dockerfile"
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
@@ -266,8 +250,8 @@ services:
     image: storage-service
     container_name: storage-service
     build:
-      context: "E:/Education/KinoDev/KinoDev.StorageService"
-      dockerfile: "E:/Education/KinoDev/KinoDev.StorageService/Dockerfile"
+      context: "../KinoDev.StorageService"
+      dockerfile: "../KinoDev.StorageService/Dockerfile"
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}  
@@ -297,8 +281,8 @@ services:
     image: identity-service
     container_name: identity-service
     build:
-      context: "E:/Education/KinoDev/KinoDev.identity"
-      dockerfile: "E:/Education/KinoDev/KinoDev.identity/Dockerfile"
+      context: "../KinoDev.identity"
+      dockerfile: "../KinoDev.identity/Dockerfile"
       args:
         - GITHUB_USER_NAME=${GITHUB_USER_NAME}
         - GITHUB_READ_PACKAGE_TOKEN=${GITHUB_READ_PACKAGE_TOKEN}
@@ -324,66 +308,59 @@ services:
     networks:
       - web
 
-    # my-ui
-  # ui:
-  #   image: ui
-  #   container_name: ui
-  #   build:
-  #     context: "E:/Education/KinoDev/KinoDev.UI"
-  #     dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
-  #     args:
-  #       - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
-  #       - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
-  #       - Portals_Main=${Portals__Main}
-  #       - Portals_Admin=${Portals__Admin}
-  #       - Public_Images_Host=${Public_Images_Host}
-  #       - Public_Images_Store_Account=${Public_Images_Store_Account}
-  #       - NODE_ENV=development   
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
-  #     - "traefik.http.routers.ui.entrypoints=websecure"
-  #     - "traefik.http.routers.ui.tls=true"
-  #     - "traefik.http.services.ui.loadbalancer.server.port=80"
-  #     # Define the SPA middleware with a clear name
-  #     - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
-  #     - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
-  #     # Apply the middleware to the router (note the middleware name matches)
-  #     - "traefik.http.routers.ui.middlewares=ui-spa@docker"  
-  #   restart: always
-  #   networks:
-  #     - web
-  #   volumes:
-  #     - ./certs:/certs:ro # Mount certs folder as read-only    
-
-  # admin-portal:
-  #   image: ui
-  #   container_name: admin-portal
-  #   build:
-  #     context: "E:/Education/KinoDev/KinoDev.UI"
-  #     dockerfile: "E:/Education/KinoDev/KinoDev.UI/Dockerfile"
-  #     args:
-  #       - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
-  #       - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
-  #       - Portals_Main=${Portals__Main}
-  #       - Portals_Admin=${Portals__Admin}
-  #       - NODE_ENV=development  
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.admin-portal.rule=Host(`admin-portal.kinodev.localhost`)"
-  #     - "traefik.http.routers.admin-portal.entrypoints=websecure"
-  #     - "traefik.http.routers.admin-portal.tls=true"
-  #     - "traefik.http.services.admin-portal.loadbalancer.server.port=80"
-  #     # Define the SPA middleware with a clear name
-  #     - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
-  #     - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
-  #     # Apply the middleware to the router (note the middleware name matches)
-  #     - "traefik.http.routers.admin-portal.middlewares=ui-spa@docker"  
-  #   restart: always
-  #   networks:
-  #     - web
-  #   volumes:
-  #     - ./certs:/certs:ro # Mount certs folder as read-only      
+    # Azure Functions app
+  kinodev-functions:
+    build: 
+      context: "../KinoDev.Functions"
+      dockerfile: "../KinoDev.Functions/Dockerfile"
+    container_name: kinodev-functions
+    env_file:
+      - .env      
+    environment:
+      - AzureWebJobsStorage=UseDevelopmentStorage=true
+      - FUNCTIONS_WORKER_RUNTIME=dotnet-isolated
+      - FUNCTIONS_EXTENSION_VERSION=~4
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kinodev-functions.rule=Host(`functions.kinodev.localhost`)"
+      - "traefik.http.routers.kinodev-functions.entrypoints=web"
+      - "traefik.http.services.kinodev-functions.loadbalancer.server.port=80"
+    networks:
+      - web
+    depends_on:
+      - azurite    
+  
+  ui:
+    image: ui
+    container_name: ui
+    build:
+      context: "../KinoDev.UI"
+      dockerfile: "../KinoDev.UI/Dockerfile"
+      args:
+        - ApiClients_IdentityServiceUri=${ApiClients__IdentityServiceUri}
+        - ApiClients_ApiGatewayUri=${ApiClients__ApiGatewayUri}
+        - Portals_Main=${Portals__Main}
+        - Portals_Admin=${Portals__Admin}
+        - Public_Images_Host=${Public_Images_Host}
+        - Public_Images_Store_Account=${Public_Images_Store_Account}
+        - Public_Tickets_Store_Account=${Public_Tickets_Store_Account}
+        - NODE_ENV=development   
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ui.rule=Host(`ui.kinodev.localhost`)"
+      - "traefik.http.routers.ui.entrypoints=websecure"
+      - "traefik.http.routers.ui.tls=true"
+      - "traefik.http.services.ui.loadbalancer.server.port=80"
+      # Define the SPA middleware with a clear name
+      - "traefik.http.middlewares.ui-spa.replacepathregex.regex=^/([^.]*|.+\\..+/.+)$$"
+      - "traefik.http.middlewares.ui-spa.replacepathregex.replacement=/index.html"
+      # Apply the middleware to the router (note the middleware name matches)
+      - "traefik.http.routers.ui.middlewares=ui-spa@docker"  
+    restart: always
+    networks:
+      - web
+    volumes:
+      - ./certs:/certs:ro # Mount certs folder as read-only     
 
   # Gotenberg - HTML to PDF conversion service
   gotenberg:
@@ -409,10 +386,7 @@ services:
     image: mcr.microsoft.com/azure-storage/azurite
     container_name: kinodev-azurite
     restart: always
-    # tell Azurite about your custom account name+key
     environment:
-      # Use the exact var name AZURITE_ACCOUNTS (plural!)
-      # Format is account1:key1[:key2];account2:key1[:key2];...
       AZURITE_ACCOUNTS: "devstoreaccount1:Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw=="
 
     ports:

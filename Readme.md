@@ -24,20 +24,18 @@ subjectAltName = @alt_names
 DNS.1 = ui.kinodev.localhost
 Customize the fields (like C, ST, L, and O) as needed.
 
+127.0.0.1 api-gateway.kinodev.localhost
+127.0.0.1 domain-service.kinodev.localhost
+127.0.0.1 ui.kinodev.localhost
+127.0.0.1 identity.kinodev.localhost
+127.0.0.1 payment-service.kinodev.localhost
+127.0.0.1 email-service.kinodev.localhost
+127.0.0.1 functions.kinodev.localhost
+
+etc
+
 2. Generate the Certificate and Private Key
-Run the following OpenSSL command in your terminal to create a self-signed certificate valid for 365 days:
 
-bash
-Copy
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout ui.kinodev.localhost.key \
-  -out ui.kinodev.localhost.crt \
-  -config ui.kinodev.localhost.cnf \
-  -extensions req_ext
-This command produces:
-
-ui.kinodev.localhost.key: Your private key.
-ui.kinodev.localhost.crt: Your self-signed certificate.
 3. Configure Traefik to Use Your Certificate
 Update your Traefik static configuration (for example, in your traefik.yml or traefik.toml) to reference your newly generated certificate. For a YAML configuration, it might look like this:
 
@@ -52,11 +50,3 @@ entryPoints:
       certificates:
         - certFile: "/certs/ui.kinodev.localhost.crt"
           keyFile: "/certs/ui.kinodev.localhost.key"
-
-
-
-openssl.exe req -x509 -nodes -days 365 -newkey rsa:2048 -keyout kinodev.key -out kinodev.crt -config kinodev.cnf -extensions req_ext          
-
-
-
-127.0.0.1 admin-portal.kinodev.localhost
